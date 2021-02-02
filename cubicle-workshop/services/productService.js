@@ -1,45 +1,44 @@
-const Cube = require('../models/cube');
-const uniqid = require('uniqid');
-const fs = require('fs');
-let products = require('../config/products.json');
-const path = require('path');
+const Cube = require('../models/Cube');
+const Accessory = require('../models/Accessory');
 
-function getAll(query) {
-    let result = products;
+async function getAll(query) {
+    let products = await Cube.find({}).lean();
 
-    if (query.search) result = result.filter(x => x.name.toLowerCase().includes(query.search));
+    if (query.search) products = products.filter(x => x.name.toLowerCase().includes(query.search));
 
-    if (query.from) result = result.filter(x => x.difficultyLevel >= Number(query.from));
+    if (query.from) products = products.filter(x => x.difficultyLevel >= Number(query.from));
 
-    if (query.to) result = result.filter(x => x.difficultyLevel <= Number(query.to));
+    if (query.to) products = products.filter(x => x.difficultyLevel <= Number(query.to));
 
-    return result;
+    return products;
 }
 
 function create(data) {
-    let cube = new Cube(
-        uniqid(),
-        data.name,
-        data.description,
-        data.imageUrl,
-        data.difficultyLevel
-    );
-    
-    products.push(cube);
+    let cube = new Cube(data);
 
-    return new Promise(function(resolve, reject) {
-        fs.writeFile(path.join(__dirname, '../config/products.json'), 
-        JSON.stringify(products), 
-        err => err ? reject(err) : resolve());
-    });
+    return cube.save();
 }
 
 function getOne(id) {
-    return products.find(obj => obj.id == id);
+    return Cube.findById(id).lean(); 
+}
+
+function getOneWithAccessories(id) {
+    return Cube.findById(id).populate('accessories').lean();
+}
+
+async function attachAccessory(productId, accessoryId) {
+    let product = await Cube.findById(productId);
+    let accessory = await Accessory.findById(accessoryId);
+    
+    product.accessories.push(accessory);
+    return product.save();
 }
 
 module.exports = {
     create,
     getAll,
-    getOne
+    getOne,
+    getOneWithAccessories,
+    attachAccessory
 };

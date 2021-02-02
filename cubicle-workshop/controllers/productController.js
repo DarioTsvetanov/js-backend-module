@@ -1,29 +1,41 @@
 const { Router } = require('express');
 const productService = require('../services/productService');
+const accessoryService = require('../services/accessoryService');
 
 const router = Router();
 
 router.get('/', (req, res) => {
-    let products = productService.getAll(req.query);
-
-    res.render('home', { title: 'Cubicle', products});
+    productService.getAll(req.query)
+        .then(products => res.render('home', { title: 'Cubicle', products}))
+        .catch(err => console.log(err));
 });
 
 router.get('/create', (req, res) => {
     res.render('create', { title: 'Create Cube Page' });
 });
 
-router.get('/details/:productId', (req, res) => {
-    let cube = productService.getOne(req.params.productId);
-
-    res.render('details', { title: 'Details', ...cube});
-});
-
 router.post('/create', (req, res) => {
-    // Validate input
-    
     productService.create(req.body)
         .then(() => res.redirect('/products'))
+        .catch(err => console.log(err));
+});
+
+router.get('/details/:productId', (req, res) => {
+    productService.getOneWithAccessories(req.params.productId)
+        .then(product => res.render('details', { title: 'Details', product, _id: req.params.productId}));
+});
+
+router.get('/:productId/attach', async (req, res) => {
+    const product = await productService.getOne(req.params.productId)
+    const accessories = await accessoryService.getAllUnattached(product.accessories);
+
+    res.render('attachAccessory', { title: 'Attach accessory', product, accessories });
+
+});
+
+router.post('/:productId/attach', (req, res) => {
+    productService.attachAccessory(req.params.productId, req.body.accessory)
+        .then(() => res.redirect(`/products/details/${req.params.productId}`))
         .catch(err => console.log(err));
 });
 

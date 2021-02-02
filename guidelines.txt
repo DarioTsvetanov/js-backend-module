@@ -1,9 +1,20 @@
 Set an app with - npm init -y
-Install all the needed dependencies - npm i express, express-handlebars, 
+Install all the needed dependencies - npm i express, express-handlebars, mongoose
 Install all the needed devDependencies - npm i -D nodemon
 
 
-Create and set a config folder with config.js file which includes an object containing development and production settings
+
+Folders needed:
+-config with all the configuration
+-controllers
+-models
+-public - css and images
+-services
+-view - layouts and partials
+
+
+
+Create config.js file which includes an object containing development and production settings
 const config = {
     development: {
         PORT: 5000
@@ -17,85 +28,121 @@ Set the needed scripts in the package.json file
 "prod": "SET NODE_ENV=production && node ./index.js"
 
 
-Import the needed files
+
+Express config
 const express = require('express');
-const config = require('./config/config');
+const handlebars = require('express-handlebars');
+
+module.exports = function(app) {
+    app.engine('hbs', handlebars({
+        extname: 'hbs',
+    }));
+    
+    app.set('view engine', 'hbs');
+    
+    app.use(express.static('public'));
+
+    app.use(express.urlencoded({
+        extended: true
+    }));
+};
 
 Set up a server
 const app = express();
-app.listen(config.PORT)
+app.listen(config.PORT, () => console.log(`Server is running on port ${config.PORT}`));
+
+
+
+Mongoose configuration
+require('./config/mongoose')();
+Export a function:
+module.exports = (app) => {
+    mongoose.connect('mongodb://localhost/DATABASE NAME', {useNewUrlParser: true, useUnifiedTopology: true});
+    const db = mongoose.connection;
+
+    db.on('error', console.error.bind(console, 'connection error:'));
+    db.once('open', () => console.log.bind(console, 'Db Connected'));
+}
+if you cant connect to the db restart mongodb service
+
 
 Create a view folder with layouts subfolder
 Inside of layouts add a main.hbs file containing the repeated elements in all templates
 Inside the main template enter the dynamic part {{{ body }}}
 Add in the templates {{ title }}
 
-Set up a view engine 
-const handlebars = require('express-handlebars');
-app.engine('hbs', handlebars({
-	extname: 'hbs'
-}));
-app.set('view engine', 'hbs');
-
 Created a folder with name public containing all the css and images
 In the index.js file make the new folder public for everyone
 place app.use(express.static('public')); in the config/express.js file - "public" is the name of the folder
 
-In the config/express.js file create a funcion with an app for parameter and export the function
-module.exports = function(app) {
-    app.engine('hbs', handlebars({
-        extname: 'hbs'
-    }));
-    
-    app.set('view engine', 'hbs');
-    
-    app.use(express.static('public'));
-};
-require the function in the main file and invoke it
+
+STRUCTURE ROUTES -> CONTROLLER -> SERVICE -> DATABASE
+In the routes file include { Router } from express
+Require all the controllers
+Invoke the router const router = Router();
+For all the request to /products the productController will be used --- router.use('products', productController); 
+Create a redirection for every non-existant page
+router.get('*', (req, res) => {
+    res.render('404' { title: "titleName" });
+});
+export the router
 
 
-Create a controllers folder
-Create a file for each controller you need, add the needed functionality to the router and the export it
+
+In every controller file include { Router } from express
+Create a router from Router function -> const router = Router();
 router.get('/', (req, res) => {
     res.render('home', { title: "titleName" })
 });
 
-Create a routes file which requires all the controllers
-use the router router.use(productController); and then export it to the index.js/server.js file -> app.use(routes);
-For all the request to /products the productController will be used router.use('products', productController); 
-after the last controller add another one for 404 not found page
-router.get('*', (req, res) => {
-    res.render('404' { title: "titleName" });
+
+
+For every product create a Schema
+require mongoose
+const productSchema = new mongoose.Schema({
+	propertyName: {
+		type: ...,
+		required: true/false,
+	}
+	accessories: [
+            {
+           	type: mongoose.Types.ObjectId,
+            	ref: 'Accessory'
+            }
+    	]
 });
+export model
+module.exports = mongoose.model('productName', schemaName);
 
-Sending information to the server
-Create a post listener in the controller file
-Add a method and an action to the html form
+Create a partial template of the product
+The Id attribute in mongo in _id
 
-In the express configuration file type 
-app.use(express.urlencoded({
-        extended: true
-    }));
-use req.body to recieve the information sent from the user
-validate the data
+Create a product from model
+Import the model
+let cube = new Cube(
+        data.name,
+        data.description,
+        data.imageUrl,
+        data.difficultyLevel
+    );
 
-Create a models folder;
-Create a class including the models properties
-Import the class in the controller
-For the unique id's we install uniq library from the terminal - npm i uniq
+return cube.save();
 
-Create services folder
-Create productService.js file exporting a object containing functions
+In the controller on get action create a function
 
-use a create function to create an object and save it in products.json file in the config folder
-products.push(cube);
-Use path library included in express;
+router.get(/products/:productId, (req, res) => {
+    productService.getOne(req.params.productId)
+        .then(products => res.render('details', { title: 'Details', products}))
+        .catch(err => console.log(err));
+    });
+})
 
-fs.writeFile(path.join(__dirname, '../config/products.json'), JSON.stringify(products), (err) => {
-        if (err) return console.log(err);
-});
+In product service get all products from database
+Create a function
+return Cube.findById(id).lean();
 
-make a partial template for the product
+
+
 
 
 
