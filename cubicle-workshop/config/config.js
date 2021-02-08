@@ -1,6 +1,8 @@
 const config = {
     development: {
-        PORT: 5000
+        PORT: 5000,
+        SALT_ROUNDS: 2,
+        PRIVATE_KEY: 'cubicledemo'
     },
     production: {
         PORT: 80

@@ -1,4 +1,8 @@
 const { Router } = require('express');
+
+const isAuthenticated = require('../middlewares/isAuthenticated');
+const isGuest = require('../middlewares/isGuest');
+
 const productService = require('../services/productService');
 const accessoryService = require('../services/accessoryService');
 
@@ -10,7 +14,7 @@ router.get('/', (req, res) => {
         .catch(err => console.log(err));
 });
 
-router.get('/create', (req, res) => {
+router.get('/create', isAuthenticated, (req, res) => {
     res.render('create', { title: 'Create Cube Page' });
 });
 
@@ -25,7 +29,7 @@ router.get('/details/:productId', (req, res) => {
         .then(product => res.render('details', { title: 'Details', product, _id: req.params.productId}));
 });
 
-router.get('/:productId/attach', async (req, res) => {
+router.get('/:productId/attach', isAuthenticated, async (req, res) => {
     const product = await productService.getOne(req.params.productId)
     const accessories = await accessoryService.getAllUnattached(product.accessories);
 
@@ -33,7 +37,7 @@ router.get('/:productId/attach', async (req, res) => {
 
 });
 
-router.post('/:productId/attach', (req, res) => {
+router.post('/:productId/attach', isAuthenticated, (req, res) => {
     productService.attachAccessory(req.params.productId, req.body.accessory)
         .then(() => res.redirect(`/products/details/${req.params.productId}`))
         .catch(err => console.log(err));
