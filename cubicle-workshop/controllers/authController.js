@@ -11,13 +11,15 @@ router.get('/register', isGuest, (req, res) => {
 });
 
 router.post('/register', isGuest, async (req, res) => {
-    try {
-        await authService.register(req.body);
+    const { username, password, repeatPassword } = req.body;
 
-        res.redirect('/auth/login');
+    try {
+        await authService.register({ username, password, repeatPassword });
+
+        res.redirect('/auth/login'); 
     }
-    catch(error) {
-        res.render('registerPage', { title: 'Register Page', error });
+    catch(errors) {
+        res.render('registerPage', { title: 'Register Page', errors });
     }
 });
 

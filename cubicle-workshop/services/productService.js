@@ -13,8 +13,8 @@ async function getAll(query) {
     return products;
 }
 
-function create(data) {
-    let cube = new Cube(data);
+function create(data, userId) {
+    let cube = new Cube({...data, creator: userId});
 
     return cube.save();
 }
@@ -35,10 +35,20 @@ async function attachAccessory(productId, accessoryId) {
     return product.save();
 }
 
+function edit(id, data) {
+    return Cube.findByIdAndUpdate(id, data);
+}
+
+function remove(id) {
+    return Cube.findByIdAndRemove(id, { useFindAndModify: false });
+}
+
 module.exports = {
     create,
     getAll,
     getOne,
     getOneWithAccessories,
-    attachAccessory
+    attachAccessory,
+    edit,
+    remove
 };

@@ -4,31 +4,36 @@ const config = require('../config/config');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
-async function register(data) {
-    // validate
-    if (!/^[a-zA-Z0-9]+$/.exec(data.username)) throw new Error("Username is invalid!");
+async function register({username, password, repeatPassword}) {
+    let errors = [];
 
-    if (!/^[a-zA-Z0-9]+$/.exec(data.password)) throw new Error("Password is invalid!");
+    if (username.length < 5) errors.push('Username should be at least 5 characters.');
 
-    if (!/^[a-zA-Z0-9]+$/.exec(data.repeatPassword)) throw new Error("Repeated password is invalid!");
+    if (!/^[a-zA-Z0-9]+$/.test(username)) errors.push('Username should contain only english letters and numbers.');
 
-    if (data.password !== data.repeatPassword) throw new Error("Passwords don't match!");
+    if (password.length < 8) errors.push('Password should be at least 8 characters.');
 
-    let existingUser = await User.findOne({ username: data.username }).exec();
+    if (!/^[a-zA-Z0-9]+$/.test(password)) errors.push('Password should contain only english letters and numbers!');
 
-    if (existingUser) throw new Error("Username already exists!");
+    if (password !== repeatPassword) errors.push('Passwords should match!');
+
+    let existingUser = await User.findOne({ username }).exec();
+
+    if (existingUser) errors.push('Username already exists!');
+    
+    if (errors.length > 0) throw errors;
 
     // hash password
-    bcrypt.hash(data.password, config.SALT_ROUNDS, function(err, hash) {
+    bcrypt.hash(password, config.SALT_ROUNDS, async function(err, hash) {
         if (err) console.log('Cant hash password');
 
         // Create new User
         let user = new User({
-            username: data.username,
+            username,
             password: hash
         });
 
-        return user.save();
+        return await user.save();
     });
 }
 
